@@ -1,0 +1,67 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+rule_files:
+  - alert_rules.yml
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'fleet-sunset-ecosystem'
+    static_configs:
+      - targets: ['sunset-ecosystem:8080']
+    metrics_path: /metrics
+    scrape_interval: 15s
+
+  - job_name: 'fleet-ccc-os'
+    static_configs:
+      - targets: ['ccc-os:8080']
+    metrics_path: /metrics
+    scrape_interval: 15s
+
+  - job_name: 'fleet-cocapn-health'
+    static_configs:
+      - targets: ['cocapn-health:8080']
+    metrics_path: /metrics
+    scrape_interval: 15s
+
+  - job_name: 'fleet-cocapn-traps'
+    static_configs:
+      - targets: ['cocapn-traps:8080']
+    metrics_path: /metrics
+    scrape_interval: 15s
+
+  - job_name: 'fleet-cocapn-plato'
+    static_configs:
+      - targets: ['cocapn-plato:8080']
+    metrics_path: /metrics
+    scrape_interval: 15s
+
+  - job_name: 'fleet-turbovec'
+    static_configs:
+      - targets: ['turbovec:8080']
+    metrics_path: /metrics
+    scrape_interval: 15s
+
+  - job_name: 'fleet-flux-vm'
+    static_configs:
+      - targets: ['flux-vm:8080']
+    metrics_path: /metrics
+    scrape_interval: 15s
+
+  - job_name: 'fleet-math-cores'
+    static_configs:
+      - targets:
+        - 'vector-novelty:8080'
+        - 'pareto-tournament:8080'
+        - 'hebbian-router:8080'
+    metrics_path: /metrics
+    scrape_interval: 15s

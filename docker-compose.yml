@@ -1,0 +1,220 @@
+version: "3.8"
+
+# Fleet Integration Stack — Local Simulation
+# Compose file for running the full Cocapn Fleet locally.
+
+services:
+  # --- Core Services ---
+
+  sunset-ecosystem:
+    build:
+      context: ../sunset-ecosystem
+      dockerfile: Dockerfile
+    environment:
+      - FLEET_MODE=daemon
+      - NEXUS_IP=nexus
+      - NEXUS_PORT=4047
+      - THERMAL_BUDGET=75
+    depends_on:
+      - nexus
+      - redis
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - fleet-net
+
+  ccc-os:
+    build:
+      context: ../ccc-os
+      dockerfile: Dockerfile
+    environment:
+      - NEXUS_IP=nexus
+      - NEXUS_PORT=4047
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
+    depends_on:
+      - nexus
+      - sunset-ecosystem
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - fleet-net
+
+  cocapn-health:
+    build:
+      context: ../cocapn-health
+      dockerfile: Dockerfile
+    environment:
+      - FLEET_HOST=nexus:4047
+      - PROBE_INTERVAL=30
+    ports:
+      - "8081:8080"
+    depends_on:
+      - nexus
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - fleet-net
+
+  cocapn-traps:
+    build:
+      context: ../cocapn-traps
+      dockerfile: Dockerfile
+    environment:
+      - TRAP_MODE=active
+      - THERMAL_THRESHOLD_C=85
+    depends_on:
+      - nexus
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - fleet-net
+
+  # --- Math Cores (lightweight, stateless) ---
+
+  vector-novelty:
+    build:
+      context: ../vector-novelty
+      dockerfile: Dockerfile
+    environment:
+      - SERVICE_MODE=api
+    ports:
+      - "8082:8080"
+    restart: unless-stopped
+    networks:
+      - fleet-net
+
+  pareto-tournament:
+    build:
+      context: ../pareto-tournament
+      dockerfile: Dockerfile
+    environment:
+      - SERVICE_MODE=api
+    ports:
+      - "8083:8080"
+    restart: unless-stopped
+    networks:
+      - fleet-net
+
+  hebbian-router:
+    build:
+      context: ../hebbian-router
+      dockerfile: Dockerfile
+    environment:
+      - SERVICE_MODE=api
+      - MESH_DISCOVERY=true
+    ports:
+      - "8084:8080"
+    restart: unless-stopped
+    networks:
+      - fleet-net
+
+  # --- Infrastructure ---
+
+  nexus:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - nexus-data:/data
+    restart: unless-stopped
+    networks:
+      - fleet-net
+
+  prometheus:
+    image: prom/prometheus:v2.50.0
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
+    networks:
+      - fleet-net
+
+  grafana:
+    image: grafana/grafana:10.3.0
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-fleet}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    restart: unless-stopped
+    networks:
+      - fleet-net
+
+  # --- Breeding Environment ---
+
+  cocapn-plato:
+    build:
+      context: ../cocapn-plato
+      dockerfile: Dockerfile
+    environment:
+      - PLATO_MODE=api
+      - NEXUS_IP=nexus
+      - NEXUS_PORT=4047
+    ports:
+      - "8085:8080"
+    depends_on:
+      - nexus
+    restart: unless-stopped
+    networks:
+      - fleet-net
+
+  # --- Compiler ---
+
+  turbovec:
+    build:
+      context: ../turbovec-integration-ccc
+      dockerfile: Dockerfile
+    environment:
+      - COMPILER_MODE=api
+      - RUST_BACKEND_URL=http://flux-vm:8080
+    depends_on:
+      - flux-vm
+    restart: unless-stopped
+    networks:
+      - fleet-net
+
+  flux-vm:
+    build:
+      context: ../flux-vm-v3-temp
+      dockerfile: Dockerfile
+    environment:
+      - VM_MODE=server
+    ports:
+      - "8086:8080"
+    restart: unless-stopped
+    networks:
+      - fleet-net
+
+volumes:
+  nexus-data:
+  prometheus-data:
+  grafana-data:
+
+networks:
+  fleet-net:
+    driver: bridge

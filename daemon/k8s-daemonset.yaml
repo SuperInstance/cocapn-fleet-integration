@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: breeder-daemon
+  namespace: cocapn
+  labels:
+    app: breeder-daemon
+    component: breeding-loop
+spec:
+  selector:
+    matchLabels:
+      app: breeder-daemon
+  template:
+    metadata:
+      labels:
+        app: breeder-daemon
+    spec:
+      serviceAccountName: breeder-daemon
+      hostNetwork: false
+      containers:
+        - name: breeder
+          image: ghcr.io/superinstance/breeder-daemon:v2
+          imagePullPolicy: Always
+          command:
+            - python
+            - -m
+            - daemon.breeder_v2
+            - --daemon
+          envFrom:
+            - configMapRef:
+                name: breeder-config
+            - secretRef:
+                name: breeder-secrets
+          ports:
+            - name: metrics
+              containerPort: 9090
+              hostPort: 9090
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          volumeMounts:
+            - name: state
+              mountPath: /var/lib/cocapn/breeder
+            - name: services-yaml
+              mountPath: /opt/cocapn/fleet_circuit_breaker
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: metrics
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: metrics
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: state
+          hostPath:
+            path: /var/lib/cocapn/breeder
+            type: DirectoryOrCreate
+        - name: services-yaml
+          configMap:
+            name: fleet-services

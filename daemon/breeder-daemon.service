@@ -1,0 +1,31 @@
+[Unit]
+Description=Cocapn BreederDaemonV2 — fleet agent breeding loop
+Documentation=https://github.com/SuperInstance/sunset-ecosystem
+After=network.target
+
+[Service]
+Type=simple
+User=cocapn
+Group=cocapn
+WorkingDirectory=/opt/cocapn/breeder
+ExecStart=/opt/cocapn/breeder/.venv/bin/python -m daemon.breeder_v2
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=breeder-daemon
+EnvironmentFile=/etc/cocapn/breeder.env
+Environment="PYTHONUNBUFFERED=1"
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/cocapn/breeder
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+[Install]
+WantedBy=multi-user.target

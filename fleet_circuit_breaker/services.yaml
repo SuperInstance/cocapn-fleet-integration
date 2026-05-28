@@ -1,0 +1,125 @@
+# Fleet Service Registry
+# Loaded by FleetHTTPClient at init time.
+
+services:
+  # Primary fleet repos — add more as services proliferate
+  sunset-ecosystem:
+    url: http://sunset.internal:8080
+    connect_timeout: 5
+    read_timeout: 30
+    retry_max: 3
+    retry_base: 1.0
+    breaker_failures: 5
+    breaker_window: 60
+    breaker_cooldown: 30
+    cache_ttl: 60
+
+  plato-shell:
+    url: http://plato.internal:8848
+    connect_timeout: 5
+    read_timeout: 30
+    retry_max: 3
+    retry_base: 1.0
+    breaker_failures: 5
+    breaker_window: 60
+    breaker_cooldown: 30
+    cache_ttl: 60
+
+  tiles-aggregator:
+    url: http://tiles.internal:8847
+    connect_timeout: 3
+    read_timeout: 15
+    retry_max: 2
+    retry_base: 0.5
+    breaker_failures: 5
+    breaker_window: 60
+    breaker_cooldown: 30
+    cache_ttl: 60
+
+  breeder-daemon:
+    url: http://breeder.internal:9000
+    connect_timeout: 5
+    read_timeout: 30
+    retry_max: 3
+    retry_base: 1.0
+    breaker_failures: 5
+    breaker_window: 60
+    breaker_cooldown: 30
+    cache_ttl: 60
+
+  flux-vector:
+    url: http://flux.internal:9001
+    connect_timeout: 5
+    read_timeout: 30
+    retry_max: 3
+    retry_base: 1.0
+    breaker_failures: 5
+    breaker_window: 60
+    breaker_cooldown: 30
+    cache_ttl: 60
+
+  consensus-node:
+    url: http://consensus.internal:9002
+    connect_timeout: 5
+    read_timeout: 60
+    retry_max: 3
+    retry_base: 1.0
+    breaker_failures: 5
+    breaker_window: 60
+    breaker_cooldown: 30
+    cache_ttl: 60
+
+  metronome-bridge:
+    url: http://metronome.internal:9003
+    connect_timeout: 5
+    read_timeout: 30
+    retry_max: 3
+    retry_base: 1.0
+    breaker_failures: 5
+    breaker_window: 60
+    breaker_cooldown: 30
+    cache_ttl: 60
+
+  fleet-conductor:
+    url: http://conductor.internal:9004
+    connect_timeout: 5
+    read_timeout: 30
+    retry_max: 3
+    retry_base: 1.0
+    breaker_failures: 5
+    breaker_window: 60
+    breaker_cooldown: 30
+    cache_ttl: 60
+
+  oracle1:
+    url: http://oracle1.internal:9005
+    connect_timeout: 5
+    read_timeout: 30
+    retry_max: 3
+    retry_base: 1.0
+    breaker_failures: 5
+    breaker_window: 60
+    breaker_cooldown: 30
+    cache_ttl: 60
+
+  zeroclaw-pool:
+    url: http://zeroclaw.internal:9006
+    connect_timeout: 5
+    read_timeout: 30
+    retry_max: 3
+    retry_base: 1.0
+    breaker_failures: 5
+    breaker_window: 60
+    breaker_cooldown: 30
+    cache_ttl: 60
+
+  forgemaster:
+    url: http://forgemaster.internal:9007
+    connect_timeout: 5
+    read_timeout: 30
+    retry_max: 3
+    retry_base: 1.0
+    breaker_failures: 5
+    breaker_window: 60
+    breaker_cooldown: 30
+    cache_ttl: 60

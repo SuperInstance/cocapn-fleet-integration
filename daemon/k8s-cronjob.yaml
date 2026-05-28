@@ -1,0 +1,60 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: breeder-daemon
+  namespace: cocapn
+  labels:
+    app: breeder-daemon
+    component: breeding-loop
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata:
+      labels:
+        app: breeder-daemon
+    spec:
+      template:
+        metadata:
+          labels:
+            app: breeder-daemon
+        spec:
+          serviceAccountName: breeder-daemon
+          restartPolicy: OnFailure
+          containers:
+            - name: breeder
+              image: ghcr.io/superinstance/breeder-daemon:v2
+              imagePullPolicy: Always
+              command:
+                - python
+                - -m
+                - daemon.breeder_v2
+                - --one-shot
+              envFrom:
+                - configMapRef:
+                    name: breeder-config
+                - secretRef:
+                    name: breeder-secrets
+              ports:
+                - name: metrics
+                  containerPort: 9090
+              resources:
+                requests:
+                  memory: "256Mi"
+                  cpu: "250m"
+                limits:
+                  memory: "512Mi"
+                  cpu: "500m"
+              volumeMounts:
+                - name: state
+                  mountPath: /var/lib/cocapn/breeder
+                - name: services-yaml
+                  mountPath: /opt/cocapn/fleet_circuit_breaker
+          volumes:
+            - name: state
+              emptyDir: {}
+            - name: services-yaml
+              configMap:
+                name: fleet-services

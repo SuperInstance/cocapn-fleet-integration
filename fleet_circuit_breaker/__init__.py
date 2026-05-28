@@ -60,20 +60,24 @@ class Breaker:
             result = fn(*args, **kwargs)
         except Exception as exc:
             with self._lock:
+                now = time.time()
+                if (now - self._state.last_failure_time) >= self.window_seconds:
+                    self._state.failures = 0
                 self._state.failures += 1
-                self._state.last_failure_time = time.time()
-                if self._state.failures >= self.failure_threshold and self._is_window_active():
+                self._state.last_failure_time = now
+                if self._state.failures >= self.failure_threshold:
                     self._state.state = "open"
             raise exc
 
         with self._lock:
+            now = time.time()
             if self._state.state == "half_open":
                 # Success while half-open → close it.
                 self._state.state = "closed"
                 self._state.failures = 0
             elif self._state.state == "closed":
                 # Reset failures if window elapsed, otherwise keep counting.
-                if not self._is_window_active():
+                if (now - self._state.last_failure_time) >= self.window_seconds:
                     self._state.failures = 0
 
         return result
@@ -198,7 +202,7 @@ class FleetHTTPClient:
                     # Cache successful response body (text only for now)
                     cache.set({"status_code": resp.status_code, "text": resp.text, "headers": dict(resp.headers)})
                 return resp
-            except requests.RequestException as exc:
+            except (requests.RequestException, CircuitOpenError) as exc:
                 last_exc = exc
                 if isinstance(exc, CircuitOpenError):
                     break

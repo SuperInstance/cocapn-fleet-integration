@@ -1,0 +1,94 @@
+# sunset-ecosystem-deployment.yaml
+# ---------------------------------------------------------------------------
+# Sunset Ecosystem — The breeding heart of the fleet.
+# Two replicas for resilience; every pod is a hot-swappable node in the swarm.
+# ---------------------------------------------------------------------------
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sunset-ecosystem-config
+  namespace: cocapn-fleet
+data:
+  FLEET_MODE: "daemon"
+  NEXUS_IP: "nexus.cocapn-fleet.svc.cluster.local"
+  NEXUS_PORT: "4047"
+  THERMAL_BUDGET: "75"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sunset-ecosystem
+  namespace: cocapn-fleet
+  labels:
+    app: sunset-ecosystem
+    tier: core
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: sunset-ecosystem
+  template:
+    metadata:
+      labels:
+        app: sunset-ecosystem
+        tier: core
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: sunset-ecosystem
+          image: sunset-ecosystem:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: http
+          envFrom:
+            - configMapRef:
+                name: sunset-ecosystem-config
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 15
+            failureThreshold: 3
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sunset-ecosystem
+  namespace: cocapn-fleet
+  labels:
+    app: sunset-ecosystem
+    tier: core
+spec:
+  selector:
+    app: sunset-ecosystem
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: http
+  type: ClusterIP

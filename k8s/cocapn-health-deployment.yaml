@@ -1,0 +1,85 @@
+# cocapn-health-deployment.yaml
+# ---------------------------------------------------------------------------
+# Health Probe — The stethoscope. Monitors fleet pulse, reports thermal state.
+# Stateless; could scale, but one probe is enough for signal clarity.
+# ---------------------------------------------------------------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cocapn-health
+  namespace: cocapn-fleet
+  labels:
+    app: cocapn-health
+    tier: observability
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cocapn-health
+  template:
+    metadata:
+      labels:
+        app: cocapn-health
+        tier: observability
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: cocapn-health
+          image: cocapn-health:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: FLEET_HOST
+              value: "nexus.cocapn-fleet.svc.cluster.local:4047"
+            - name: PROBE_INTERVAL
+              value: "30"
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 30
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 15
+            failureThreshold: 3
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cocapn-health
+  namespace: cocapn-fleet
+  labels:
+    app: cocapn-health
+    tier: observability
+spec:
+  selector:
+    app: cocapn-health
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: http
+  type: ClusterIP

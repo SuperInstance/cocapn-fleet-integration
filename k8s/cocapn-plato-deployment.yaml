@@ -1,0 +1,87 @@
+# cocapn-plato-deployment.yaml
+# ---------------------------------------------------------------------------
+# Plato — The breeding grounds. Agents spawn here, explore rooms, build shells.
+# One replica; the nursery doesn't need to scale until the swarm demands it.
+# ---------------------------------------------------------------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cocapn-plato
+  namespace: cocapn-fleet
+  labels:
+    app: cocapn-plato
+    tier: breeding
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cocapn-plato
+  template:
+    metadata:
+      labels:
+        app: cocapn-plato
+        tier: breeding
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: cocapn-plato
+          image: cocapn-plato:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: PLATO_MODE
+              value: "api"
+            - name: NEXUS_IP
+              value: "nexus.cocapn-fleet.svc.cluster.local"
+            - name: NEXUS_PORT
+              value: "4047"
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            failureThreshold: 3
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cocapn-plato
+  namespace: cocapn-fleet
+  labels:
+    app: cocapn-plato
+    tier: breeding
+spec:
+  selector:
+    app: cocapn-plato
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: http
+  type: ClusterIP

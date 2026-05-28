@@ -1,6 +1,14 @@
+# prometheus.yml
+# ---------------------------------------------------------------------------
+# Fleet Prometheus — Scrapes every heartbeat, every metric, every breath.
+# 15s interval: fast enough to catch thermal spikes, slow enough to stay sane.
+# ---------------------------------------------------------------------------
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
+  external_labels:
+    cluster: cocapn-fleet
+    replica: "{{.ExternalURL}}"
 
 alerting:
   alertmanagers:
@@ -11,57 +19,46 @@ rule_files:
   - alert_rules.yml
 
 scrape_configs:
-  - job_name: 'prometheus'
+  - job_name: "prometheus"
     static_configs:
-      - targets: ['localhost:9090']
+      - targets: ["localhost:9090"]
 
-  - job_name: 'fleet-sunset-ecosystem'
+  - job_name: "sunset-ecosystem"
     static_configs:
-      - targets: ['sunset-ecosystem:8080']
+      - targets: ["sunset-ecosystem.cocapn-fleet.svc.cluster.local:8080"]
     metrics_path: /metrics
-    scrape_interval: 15s
 
-  - job_name: 'fleet-ccc-os'
+  - job_name: "ccc-os"
     static_configs:
-      - targets: ['ccc-os:8080']
+      - targets: ["ccc-os.cocapn-fleet.svc.cluster.local:8080"]
     metrics_path: /metrics
-    scrape_interval: 15s
 
-  - job_name: 'fleet-cocapn-health'
+  - job_name: "cocapn-health"
     static_configs:
-      - targets: ['cocapn-health:8080']
+      - targets: ["cocapn-health.cocapn-fleet.svc.cluster.local:8080"]
     metrics_path: /metrics
-    scrape_interval: 15s
 
-  - job_name: 'fleet-cocapn-traps'
+  - job_name: "cocapn-traps"
     static_configs:
-      - targets: ['cocapn-traps:8080']
+      - targets: ["cocapn-traps.cocapn-fleet.svc.cluster.local:8080"]
     metrics_path: /metrics
-    scrape_interval: 15s
 
-  - job_name: 'fleet-cocapn-plato'
+  - job_name: "cocapn-plato"
     static_configs:
-      - targets: ['cocapn-plato:8080']
+      - targets: ["cocapn-plato.cocapn-fleet.svc.cluster.local:8080"]
     metrics_path: /metrics
-    scrape_interval: 15s
 
-  - job_name: 'fleet-turbovec'
+  - job_name: "turbovec"
     static_configs:
-      - targets: ['turbovec:8080']
+      - targets: ["turbovec.cocapn-fleet.svc.cluster.local:8080"]
     metrics_path: /metrics
-    scrape_interval: 15s
 
-  - job_name: 'fleet-flux-vm'
+  - job_name: "flux-vm"
     static_configs:
-      - targets: ['flux-vm:8080']
+      - targets: ["flux-vm.cocapn-fleet.svc.cluster.local:8080"]
     metrics_path: /metrics
-    scrape_interval: 15s
 
-  - job_name: 'fleet-math-cores'
+  - job_name: "redis"
     static_configs:
-      - targets:
-        - 'vector-novelty:8080'
-        - 'pareto-tournament:8080'
-        - 'hebbian-router:8080'
+      - targets: ["nexus.cocapn-fleet.svc.cluster.local:6379"]
     metrics_path: /metrics
-    scrape_interval: 15s

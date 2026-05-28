@@ -1,9 +1,16 @@
+# grafana/datasources/prometheus.yml
+# ---------------------------------------------------------------------------
+# Grafana Data Source Provisioning — Prometheus, auto-wired.
+# No clicking. No passwords. It just knows where to look.
+# ---------------------------------------------------------------------------
 apiVersion: 1
-
 datasources:
   - name: Prometheus
     type: prometheus
     access: proxy
-    url: http://prometheus:9090
+    url: http://prometheus.cocapn-fleet.svc.cluster.local:9090
     isDefault: true
     editable: false
+    jsonData:
+      timeInterval: "15s"
+      httpMethod: POST

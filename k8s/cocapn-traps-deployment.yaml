@@ -1,0 +1,85 @@
+# cocapn-traps-deployment.yaml
+# ---------------------------------------------------------------------------
+# Traps Service — Thermal guardian. Watches temperature thresholds and alerts.
+# The fleet's canary; if this screams, something is on fire.
+# ---------------------------------------------------------------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cocapn-traps
+  namespace: cocapn-fleet
+  labels:
+    app: cocapn-traps
+    tier: safety
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cocapn-traps
+  template:
+    metadata:
+      labels:
+        app: cocapn-traps
+        tier: safety
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: cocapn-traps
+          image: cocapn-traps:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: TRAP_MODE
+              value: "active"
+            - name: THERMAL_THRESHOLD_C
+              value: "85"
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            failureThreshold: 3
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cocapn-traps
+  namespace: cocapn-fleet
+  labels:
+    app: cocapn-traps
+    tier: safety
+spec:
+  selector:
+    app: cocapn-traps
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: http
+  type: ClusterIP

@@ -1,0 +1,27 @@
+# service-monitor.yaml
+# ---------------------------------------------------------------------------
+# Prometheus ServiceMonitor — Scrapes every pod that exposes metrics.
+# The watchman. If a pod falls silent here, it falls silent everywhere.
+# ---------------------------------------------------------------------------
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: cocapn-fleet-monitor
+  namespace: cocapn-fleet
+  labels:
+    app: cocapn-fleet
+    tier: observability
+spec:
+  selector:
+    matchExpressions:
+      - key: app
+        operator: Exists
+  namespaceSelector:
+    matchNames:
+      - cocapn-fleet
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+      scrapeTimeout: 10s
+  jobLabel: app

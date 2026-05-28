@@ -1,0 +1,8 @@
+# alert_rules.yml
+# ---------------------------------------------------------------------------
+# Fleet Alert Rules — Currently empty; a scaffold for thermal, latency,
+# and breeding-cycle alerts. Fill as the metrics surface.
+# ---------------------------------------------------------------------------
+groups:
+  - name: cocapn-fleet
+    rules: []

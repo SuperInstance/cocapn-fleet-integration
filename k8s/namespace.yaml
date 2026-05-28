@@ -1,0 +1,12 @@
+# namespace.yaml
+# ---------------------------------------------------------------------------
+# Cocapn Fleet — Namespace
+# Dieter Rams meets Moebius: one clean boundary for everything that lives here.
+# ---------------------------------------------------------------------------
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cocapn-fleet
+  labels:
+    app.kubernetes.io/part-of: cocapn-fleet
+    fleet.sunset.io/managed: "true"

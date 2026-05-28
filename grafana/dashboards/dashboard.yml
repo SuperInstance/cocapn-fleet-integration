@@ -1,12 +1,16 @@
+# grafana/dashboards/dashboard.yml
+# ---------------------------------------------------------------------------
+# Grafana Dashboard Provider — Loads all dashboards from /var/lib/grafana/dashboards.
+# One config, many faces. The fleet overview is just the first.
+# ---------------------------------------------------------------------------
 apiVersion: 1
-
 providers:
-  - name: 'fleet-dashboards'
+  - name: "fleet-dashboards"
     orgId: 1
-    folder: 'Fleet'
+    folder: "Cocapn Fleet"
     type: file
     disableDeletion: false
-    updateIntervalSeconds: 10
+    updateIntervalSeconds: 30
     allowUiUpdates: true
     options:
-      path: /etc/grafana/provisioning/dashboards
+      path: /var/lib/grafana/dashboards

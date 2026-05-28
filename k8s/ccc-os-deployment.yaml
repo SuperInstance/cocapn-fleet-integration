@@ -1,0 +1,91 @@
+# ccc-os-deployment.yaml
+# ---------------------------------------------------------------------------
+# CCC-OS — The nervous system. Single replica; one brain, many tentacles.
+# Routes tiles, manages context, keeps the fleet from drowning.
+# ---------------------------------------------------------------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ccc-os
+  namespace: cocapn-fleet
+  labels:
+    app: ccc-os
+    tier: core
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ccc-os
+  template:
+    metadata:
+      labels:
+        app: ccc-os
+        tier: core
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: ccc-os
+          image: ccc-os:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: NEXUS_IP
+              value: "nexus.cocapn-fleet.svc.cluster.local"
+            - name: NEXUS_PORT
+              value: "4047"
+            - name: GITHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: fleet-secrets
+                  key: github-token
+                  optional: true
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            failureThreshold: 3
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ccc-os
+  namespace: cocapn-fleet
+  labels:
+    app: ccc-os
+    tier: core
+spec:
+  selector:
+    app: ccc-os
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: http
+  type: ClusterIP

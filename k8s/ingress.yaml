@@ -1,0 +1,65 @@
+# ingress.yaml
+# ---------------------------------------------------------------------------
+# Fleet Ingress — The front door. Routes external traffic to internal rooms.
+# /sunset    → Breeding daemon and swarm orchestration
+# /ccc       → Fleet nervous system and context routing
+# /health    → Health probes and thermal monitoring
+# /plato     → Agent breeding grounds
+# /compile   → RoomGrid hot-swap compiler
+# /flux      → Rust VM backend
+# ---------------------------------------------------------------------------
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cocapn-fleet-ingress
+  namespace: cocapn-fleet
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - path: /sunset
+            pathType: Prefix
+            backend:
+              service:
+                name: sunset-ecosystem
+                port:
+                  number: 8080
+          - path: /ccc
+            pathType: Prefix
+            backend:
+              service:
+                name: ccc-os
+                port:
+                  number: 8080
+          - path: /health
+            pathType: Prefix
+            backend:
+              service:
+                name: cocapn-health
+                port:
+                  number: 8080
+          - path: /plato
+            pathType: Prefix
+            backend:
+              service:
+                name: cocapn-plato
+                port:
+                  number: 8080
+          - path: /compile
+            pathType: Prefix
+            backend:
+              service:
+                name: turbovec
+                port:
+                  number: 8080
+          - path: /flux
+            pathType: Prefix
+            backend:
+              service:
+                name: flux-vm
+                port:
+                  number: 8080

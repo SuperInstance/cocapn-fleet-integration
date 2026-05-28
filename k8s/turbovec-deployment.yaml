@@ -1,0 +1,85 @@
+# turbovec-deployment.yaml
+# ---------------------------------------------------------------------------
+# Turbovec Compiler — The forge. Compiles RoomGrid hot-swaps, ships code.
+# Depends on flux-vm for the Rust backend; this is the orchestrator.
+# ---------------------------------------------------------------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: turbovec
+  namespace: cocapn-fleet
+  labels:
+    app: turbovec
+    tier: compiler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: turbovec
+  template:
+    metadata:
+      labels:
+        app: turbovec
+        tier: compiler
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: turbovec
+          image: turbovec-integration-ccc:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: COMPILER_MODE
+              value: "api"
+            - name: RUST_BACKEND_URL
+              value: "http://flux-vm.cocapn-fleet.svc.cluster.local:8080"
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            failureThreshold: 3
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: turbovec
+  namespace: cocapn-fleet
+  labels:
+    app: turbovec
+    tier: compiler
+spec:
+  selector:
+    app: turbovec
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: http
+  type: ClusterIP

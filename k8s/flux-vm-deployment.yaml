@@ -1,0 +1,83 @@
+# flux-vm-deployment.yaml
+# ---------------------------------------------------------------------------
+# Flux VM — The Rust backend. Bare metal soul inside a container.
+# Serves the turbovec compiler; keeps the fleet's math honest.
+# ---------------------------------------------------------------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flux-vm
+  namespace: cocapn-fleet
+  labels:
+    app: flux-vm
+    tier: compiler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flux-vm
+  template:
+    metadata:
+      labels:
+        app: flux-vm
+        tier: compiler
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: flux-vm
+          image: flux-vm-v3-temp:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: VM_MODE
+              value: "server"
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            failureThreshold: 3
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flux-vm
+  namespace: cocapn-fleet
+  labels:
+    app: flux-vm
+    tier: compiler
+spec:
+  selector:
+    app: flux-vm
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: http
+  type: ClusterIP

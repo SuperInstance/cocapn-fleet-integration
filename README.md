@@ -115,3 +115,5 @@ The `.github/workflows/integration.yml` runs on every push:
 ## License
 
 MIT — Fleet integration belongs to the fleet.
+
+Part of the [SuperInstance OpenConstruct](https://github.com/SuperInstance/OpenConstruct) ecosystem.
